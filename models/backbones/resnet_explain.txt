@@ -1,0 +1,31 @@
+layers		= 101
+depth		= [3, 4, 23, 3]
+num_channels	= [64, 256, 512, 1024]
+num_filters	= [64, 128, 256, 512]
+feat_channels	= [256, 512, 1024, 2048]
+output_stride	= 8
+dilation_dict	= [2:2, 3:4]
+multi_grid	= [1, 2, 4]
+
+4 blocks, number of bottleneck in each block = depth[block_i]
+每个bottleneck的名字如下：
+一般的名字：res(block_i+2)(a,b,c,d...-对应depth_i)
+101和152的第3个block的第1个bottleneck名字：res(block_i+2)(a)
+101和152的第3个block的其他bottleneck名字：res(block_i+2)(b)(depth_i)
+
+block_i = 2 or 3时，dilation_rate = 2 or 4；其他时候dilation_rate = 1
+block_i = 3时，dilation_rate = [4, 8, 16]
+
+BottleneckBlock(
+in_channels=num_channels[block] if i == 0 else num_filters[block] * 4, #除每个block的第1个bn外其他都是num_channels的4倍
+out_channels=num_filters[block],
+stride=2 if i == 0 and block != 0 and dilation_rate == 1 else 1, #除0,2,3号block的每个block的第一个bn的stride=2
+shortcut=shortcut, # 除每个block的第一个bn，shortcut为false外，其他都为true（即每个block的第一个bn需要进行卷积才能shortcut）
+if_first=block == i == 0, #第1个block的第1个bn时，或2,3号block需要用avg_pool来缩小尺寸，其他bn只需要stride=2的卷积就行
+name=conv_name,
+dilation=dilation_rate)
+)
+
+
+
+

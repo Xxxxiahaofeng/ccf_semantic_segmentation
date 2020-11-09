@@ -1,0 +1,2 @@
+https://bj.bcebos.com/paddleseg/dygraph/hrnet_w48_ssld.tar.gz
+https://bj.bcebos.com/paddleseg/dygraph/resnet101_vd_ssld.tar.gz
