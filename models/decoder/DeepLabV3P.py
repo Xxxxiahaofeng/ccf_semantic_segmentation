@@ -51,10 +51,7 @@ class DeepLabV3P(nn.Layer):
     def forward(self, x):
         feat_list = self.backbone(x)
         logit_list = self.head(feat_list)
-        return [
-            F.interpolate(logit, x.shape[2:], mode='bilinear')
-            for logit in logit_list
-        ]
+        return F.interpolate(logit_list[0], x.shape[2:], mode='bilinear')
 
 
 class DeepLabV3PHead(nn.Layer):

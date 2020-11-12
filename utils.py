@@ -62,9 +62,9 @@ def load_pretrained_model(model, pretrained_model):
                 pretrained_model))
 
 
-def load_resume_model(model, optimizer, args):
+def load_resume_model(model, dir, resume):
     logger = logging.getLogger('train.load_resume')
-    resume_model = os.path.join(args.outdir, '{}_epoch.pdparams'.format(args.resume))
+    resume_model = os.path.join(dir, '{}_epoch.pdparams'.format(resume))
     if resume_model is not None:
         logger.info('Resume model from {}'.format(resume_model))
         if os.path.exists(resume_model):

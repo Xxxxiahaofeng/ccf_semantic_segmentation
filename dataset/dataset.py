@@ -56,4 +56,5 @@ class baseDataset(io.Dataset):
             img -= mean
             img /= var
             img = img.transpose(2, 0, 1)
+
             return img, item

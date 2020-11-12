@@ -30,13 +30,13 @@ class trainer:
                                                learning_rate=args.lr,
                                                weight_decay=args.weight_decay,
                                                parameters=self.model.parameters())
-        self.warmup_lr = warmup_lr(start_lr=0.00001,
+        self.warmup_lr = warmup_lr(start_lr=0.0001,
                                    end_lr=args.lr,
                                    num_step=5,
                                    last_step=self.args.resume)
 
         if args.resume >= 0:
-            load_resume_model(self.model, self.optimizer, args)
+            load_resume_model(self.model, args.outdir, args.resume)
         elif args.pretrained is not None:
             load_pretrained_model(self.model, args.pretrained)
 
@@ -95,7 +95,7 @@ class trainer:
         curr_iter = self.start_iter
         metric_writer = open(os.path.join(self.args.outdir, 'eval_metric.txt'), 'w+')
 
-        for epoch_i in range(self.n_epoch):
+        for epoch_i in range(self.resume+1, self.n_epoch):
 
             iter_loss = AverageTracker()
             train_loss = AverageTracker()
@@ -105,7 +105,7 @@ class trainer:
 # ==================== train ======================
             self.model.train()
 
-            if self.warmup_lr.now_step < self.warmup_lr.num_step:
+            if self.warmup_lr.now_step < self.warmup_lr.num_step and self.args.if_warmup:
                 warmingup = True
                 self.optimizer = self.warmup_lr.set(self.optimizer)
             else:
@@ -123,7 +123,7 @@ class trainer:
                 self.optimizer.step()
                 self.model.clear_gradients()
 
-                if not warmingup:
+                if not warmingup and self.args.lr_decay:
                     self.optimizer.set_lr(self.args.lr*(1-float(curr_iter)/(self.num_batches*self.n_epoch))**0.9)
                     curr_iter += 1
 
@@ -197,24 +197,26 @@ if __name__ == "__main__":
     paddle.disable_static()
     parser = argparse.ArgumentParser()
     parser.add_argument('--datadir', default='/media/xiehaofeng/新加卷/things/baidu_segmentation/train_data', help="the path of data")
-    parser.add_argument('--pretrained', default='/media/xiehaofeng/新加卷/learning/code/paddle/@mycode/my_first_match/models/pretrained/hrnet_w48_ssld/model.pdparams', help='the path of pretrained weight')
-    parser.add_argument('--outdir', default='/media/xiehaofeng/新加卷/things/baidu_segmentation/train_data/result/with_pretrained_loss_weight', help='the path to save checkpoints, val_result and log file')
+    parser.add_argument('--pretrained', default='/media/xiehaofeng/新加卷/things/baidu_segmentation/train_data/result/resnet101_vd_ssld/model.pdparams', help='the path of pretrained weight')
+    parser.add_argument('--outdir', default='/media/xiehaofeng/新加卷/things/baidu_segmentation/train_data/result/deeplab_checkpoint', help='the path to save checkpoints, val_result and log file')
 
-    parser.add_argument('--n_epoch', default=100, help='train epoch numbers')
-    parser.add_argument('--resume', default=-1, help='the epoch to start train')
+    parser.add_argument('--n_epoch', default=50, help='train epoch numbers')
+    parser.add_argument('--resume', default=0, help='the epoch to start train')
     parser.add_argument('--maxiter', default=50000, help='the max iteration of training')
 
     parser.add_argument('--n_class', default=7, help='the number of classes')
     parser.add_argument('--lr', default=0.0001, type=float, help='learning rate')
-    parser.add_argument('--batch_size', default=16, help='the number of batch size')
+    parser.add_argument('--if_warmup', default=False, help='if using warmup learning rate')
+    parser.add_argument('--lr_decay', default=True, help='if use learning rate dacay')
+    parser.add_argument('--batch_size', default=12, help='the number of batch size')
     parser.add_argument('--ignore_value', default=255, help='the label be ignore in training')
     parser.add_argument('--momentum', default=0.9, type=float, help='momentum of SGD optimizer')
     parser.add_argument('--weight_decay', default=0.0001, type=float, help='waight decay of SGD optimizer')
 
-    parser.add_argument('--model', default='HRNet_W48_OCR', help='the model to be build and train')
+    parser.add_argument('--model', default='deeplabv3p', help='the model to be build and train')
 
     parser.add_argument('--loss', default='CrossEntropyLoss', help='the loss using for train and validate')
-    parser.add_argument('--loss_weight', default=[1.0,0.6,0.5,0.6,10.0,1.0,1.0])
+    parser.add_argument('--loss_weight', default=[1.0,1.0,0.5,1.0,10.0,1.0,1.0])
 
     args = parser.parse_args()
     main(args)
